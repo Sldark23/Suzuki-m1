@@ -40,14 +40,25 @@ top_k = col3.slider("Top-K", 1, 100, 50, 1)
 if st.button("Gerar", type="primary"):
     with st.spinner("Gerando..."):
         ids = tk.encode(prompt, return_tensors="pt")
-        with torch.no_grad():
-            out = model.generate(
-                ids,
-                max_new_tokens=max_tokens,
-                do_sample=True,
-                top_k=top_k,
-                temperature=temperature,
-                pad_token_id=tk.pad_token_id,
-                eos_token_id=tk.eos_token_id,
-            )
+        try:
+            with torch.no_grad():
+                out = model.generate(
+                    ids,
+                    max_new_tokens=max_tokens,
+                    do_sample=True,
+                    top_k=top_k,
+                    temperature=temperature,
+                    pad_token_id=tk.pad_token_id,
+                    eos_token_id=tk.eos_token_id,
+                )
+        except RuntimeError as e:
+            st.error(f"Falha na amostragem: {e}\nTentando geração gulosa...")
+            with torch.no_grad():
+                out = model.generate(
+                    ids,
+                    max_new_tokens=max_tokens,
+                    do_sample=False,
+                    pad_token_id=tk.pad_token_id,
+                    eos_token_id=tk.eos_token_id,
+                )
         st.markdown(tk.decode(out[0].tolist()))
