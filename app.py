@@ -1,8 +1,18 @@
 import torch
 import streamlit as st
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from huggingface_hub import HfApi
 
 MODEL = "Raivatv24/suzuki-m1-gpt"
+
+try:
+    revision = HfApi().model_info(MODEL).sha
+except Exception:
+    revision = None
+
+if st.session_state.get("last_rev") != revision:
+    st.cache_resource.clear()
+    st.session_state["last_rev"] = revision
 
 
 @st.cache_resource
@@ -17,7 +27,8 @@ tk, model = carregar()
 
 st.set_page_config(page_title="Suzuki-m1", page_icon=":brain:")
 st.title("Suzuki-m1 — GPT treinado do zero em português")
-st.caption("Modelo ~23M parâmetros, pré-treinado do zero sobre o corpus Suzuki-m1.")
+rev = revision[:8] if revision else "?"
+st.caption(f"Modelo ~23M parâmetros, pré-treinado do zero sobre o corpus Suzuki-m1. Versão no Hub: `{rev}`.")
 
 prompt = st.text_area("Começo do texto", "Era uma vez,", height=100)
 
